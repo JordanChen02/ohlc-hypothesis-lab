@@ -7,7 +7,7 @@ NY_TZ = "America/New_York"
 # -----------------------------------
 # CONFIG
 # -----------------------------------
-RANGE_MINUTES = 60   # set to 15 or 60
+RANGE_MINUTES = 15   # set to 15 or 60
 
 
 def main():
