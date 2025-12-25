@@ -20,14 +20,25 @@ def load_data():
     return df
 
 
-def run_stairstep_acceptance(df, steps=4):
-    # Conditional step stats:
-    # denom[n] = count of breakouts where steps 1..(n-1) held AND candle n exists
-    # numer[n] = of those, step n held
+def run_stairstep(df, steps=4):
+    """
+    TRUE STAIRSTEP (CUMULATIVE ONLY)
+
+    Candle 0 = close-confirmed breakout candle
+
+    UP:
+      Step n holds if candle[n].low  > candle[n-1].low
+
+    DOWN:
+      Step n holds if candle[n].high < candle[n-1].high
+
+    Once a step fails, the chain is DEAD.
+    """
+
     out = {
-        "up": {"denom": [0] * (steps + 1), "numer": [0] * (steps + 1)},
-        "down": {"denom": [0] * (steps + 1), "numer": [0] * (steps + 1)},
-        "meta": {"no_breakout": 0, "insufficient_bars": 0},
+        "up": {"base": 0, "survivors": [0] * (steps + 1)},
+        "down": {"base": 0, "survivors": [0] * (steps + 1)},
+        "meta": {"no_breakout": 0},
     }
 
     df = df.copy()
@@ -47,10 +58,9 @@ def run_stairstep_acceptance(df, steps=4):
         if after.empty:
             continue
 
-        # close-confirmed breakout candle = candle 0
+        # Find close-confirmed breakout (candle 0)
         b0_idx = None
         direction = None
-
         for idx, row in after.iterrows():
             if row["close"] > r_high:
                 b0_idx = idx
@@ -70,72 +80,67 @@ def run_stairstep_acceptance(df, steps=4):
         if isinstance(pos0, slice):
             pos0 = pos0.start
 
-        # Need candle 1..steps
-        if pos0 + steps >= len(idxs):
-            out["meta"]["insufficient_bars"] += 1
-            # Still can contribute to earlier steps if some bars exist:
-            # We'll handle per-step existence below.
-        # Build candle list [c0, c1, ..., c_steps] where available
+        # Need at least candle 1 to evaluate stairstep at all
+        if pos0 + 1 >= len(idxs):
+            continue
+
+        # Build candles c0..cN
         candles = []
         for k in range(0, steps + 1):
             p = pos0 + k
-            if p < len(idxs):
-                candles.append(after.loc[idxs[p]])
-            else:
-                candles.append(None)
+            candles.append(after.loc[idxs[p]] if p < len(idxs) else None)
 
-        # Evaluate steps sequentially with conditional denominators
-        held_all_prior = True
+        out[direction]["base"] += 1
+
+        chain_alive = True
         for n in range(1, steps + 1):
-            if not held_all_prior:
-                break  # conditional chain breaks
+            if not chain_alive:
+                break
+            if candles[n] is None:
+                break
 
             c_prev = candles[n - 1]
             c_cur = candles[n]
 
-            if c_cur is None:
-                break  # no candle n, can't evaluate further
-
-            out[direction]["denom"][n] += 1
-
             if direction == "up":
-                step_holds = c_cur["low"] > c_prev["low"]
+                holds = c_cur["low"] > c_prev["low"]
             else:
-                step_holds = c_cur["high"] < c_prev["high"]
+                holds = c_cur["high"] < c_prev["high"]
 
-            if step_holds:
-                out[direction]["numer"][n] += 1
+            if holds:
+                out[direction]["survivors"][n] += 1
             else:
-                held_all_prior = False
+                chain_alive = False
 
     return out
 
 
 def print_results(out, steps=4):
-    print("\n=== Stairstep Acceptance Test (Conditional) ===")
+    print("\n=== STAIRSTEP ACCEPTANCE (CUMULATIVE SURVIVAL) ===")
     print("Candle 0 = close-confirmed breakout candle")
-    print("UP: step holds if candle[n].low  > candle[n-1].low")
-    print("DOWN: step holds if candle[n].high < candle[n-1].high")
-    print("-" * 48)
+    print("Once a step fails, the stairstep is DEAD.")
+    print("-" * 52)
 
     for side in ["up", "down"]:
+        base = out[side]["base"]
         print(f"\n{side.upper()} BREAKOUTS")
+        print(f"Base samples: {base}")
+
+        if base == 0:
+            continue
+
         for n in range(1, steps + 1):
-            d = out[side]["denom"][n]
-            if d == 0:
-                print(f"Step {n}: no samples")
-                continue
-            p = out[side]["numer"][n] / d
-            print(f"Step {n} (c{n} vs c{n-1}) holds: {p:.2%}   (samples={d})")
+            surv = out[side]["survivors"][n]
+            p = surv / base
+            print(f"Survives through Step {n}: {p:.2%}")
 
     print("\nDEBUG")
     print(f"No breakout days: {out['meta']['no_breakout']}")
-    print(f"Days with insufficient bars for full chain: {out['meta']['insufficient_bars']}")
-    print("-" * 48)
+    print("-" * 52)
 
 
 if __name__ == "__main__":
     df = load_data()
     steps = 4
-    out = run_stairstep_acceptance(df, steps=steps)
+    out = run_stairstep(df, steps=steps)
     print_results(out, steps=steps)
