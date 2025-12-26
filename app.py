@@ -41,6 +41,11 @@ def fmt_pct(x: float) -> str:
 
     return f"{x * 100:.2f}%"
 
+def held_pct(held_count: float, samples: float) -> float:
+    """Convert held counts into a percentage."""
+    if held_count is None or samples in (None, 0):
+        return 0.0
+    return (float(held_count) / float(samples)) * 100.0
 
 with center:
     st.title("Market Hypothesis Research")
@@ -61,7 +66,8 @@ with center:
             "10AM Reversal",
             "Close vs Wick",
             "Stairstep Acceptance",
-            "Strategy",
+            "Strategy Development",
+            "Final Strategy",
         ]
     )
 
@@ -113,6 +119,22 @@ Even if you don’t trade, you can read this as **time-series event analysis**.
 """
         )
 
+        st.subheader("Hypotheses Considered but Rejected")
+        st.markdown(
+            """
+        Several additional hypotheses were tested during this project but are not presented in detail.
+        While some showed directional tendencies, their effect sizes and consistency were not strong
+        enough to justify inclusion in a rules-based framework.
+
+        These hypotheses were excluded to avoid overfitting and to keep the analysis focused on
+        statistically meaningful behavior.
+
+        Examples included:
+        - Range size vs reward multiples
+        - Midpoint revisit probabilities
+        - Extended continuation beyond first acceptance
+        """
+        )
         st.info(
             "Goal: show structured hypothesis research + clean presentation — "
             "the same analytical approach used in product analytics, A/B tests, or time-series monitoring."
@@ -204,48 +226,47 @@ the opposing side is unlikely to be revisited before late morning.
             "Are **close-confirmed breakouts** more reliable than **wick-only breaches**?"
         )
 
-        cvw = run_close_vs_wick_test(df)
+        results = run_close_vs_wick_test(df)
 
-        wick = cvw["wick"]
-        close = cvw["close"]
+        wick = results["wick"]
+        close = results["close"]
 
-        table_rows = [
-            {
-                "Type": "Wick Breakouts",
-                "Samples": wick["samples"],
-                "Held until 11:00": fmt_pct(wick["held_11"]),
-                "Held until 12:00": fmt_pct(wick["held_12"]),
-            },
-            {
-                "Type": "Close Breakouts",
-                "Samples": close["samples"],
-                "Held until 11:00": fmt_pct(close["held_11"]),
-                "Held until 12:00": fmt_pct(close["held_12"]),
-            },
-        ]
+        wick_11 = held_pct(wick["held_11"], wick["samples"])
+        wick_12 = held_pct(wick["held_12"], wick["samples"])
 
-        st.dataframe(
-            pd.DataFrame(table_rows),
-            use_container_width=True,
-            hide_index=True,
+        close_11 = held_pct(close["held_11"], close["samples"])
+        close_12 = held_pct(close["held_12"], close["samples"])
+
+        table_df = pd.DataFrame(
+            [
+                {
+                    "Type": "Wick Breakouts",
+                    "Samples": int(wick["samples"]),
+                    "Held until 11:00": f"{wick_11:.2f}%",
+                    "Held until 12:00": f"{wick_12:.2f}%",
+                },
+                {
+                    "Type": "Close Breakouts",
+                    "Samples": int(close["samples"]),
+                    "Held until 11:00": f"{close_11:.2f}%",
+                    "Held until 12:00": f"{close_12:.2f}%",
+                },
+            ]
         )
 
-        # Statistical conclusion with deltas
-        # Convert to decimals for delta math
-        def as_decimal(x: float) -> float:
-            x = float(x)
-            return (x / 100.0) if x > 1.5 else x
+        st.dataframe(table_df, use_container_width=True, hide_index=True)
 
-        d11 = (as_decimal(close["held_11"]) - as_decimal(wick["held_11"])) * 100
-        d12 = (as_decimal(close["held_12"]) - as_decimal(wick["held_12"])) * 100
+        d11 = close_11 - wick_11
+        d12 = close_12 - wick_12
 
         st.info(
             f"**Conclusion (statistical):** Close-confirmed breakouts outperform wick-only breaches. "
             f"By 11:00, close-confirmed holds are higher by **{d11:.2f} pp** "
-            f"({fmt_pct(close['held_11'])} vs {fmt_pct(wick['held_11'])}). "
+            f"({close_11:.2f}% vs {wick_11:.2f}%). "
             f"By 12:00, the advantage is **{d12:.2f} pp** "
-            f"({fmt_pct(close['held_12'])} vs {fmt_pct(wick['held_12'])})."
+            f"({close_12:.2f}% vs {wick_12:.2f}%)."
         )
+
 
     # =================================================
     # TAB 3 — STAIRSTEP ACCEPTANCE
@@ -298,6 +319,26 @@ Once a step fails, the sequence is invalidated (it does not “restart”).
             )
             st.caption(f"Base samples: {base_dn}")
 
+        st.subheader("Visual Examples")
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.image(
+                "assets/stairstep_up.png",
+                caption="Stairstep Acceptance — Upward Breakout",
+                use_container_width=True,
+            )
+
+        with col2:
+            st.image(
+                "assets/stairstep_down.png",
+                caption="Stairstep Acceptance — Downward Breakout",
+                use_container_width=True,
+            )
+
+        st.divider()
+
         # Step-1 emphasis conclusion with numbers
         if base_up and base_dn:
             step1_up = ss["up"]["survivors"][1] / base_up
@@ -311,7 +352,7 @@ Once a step fails, the sequence is invalidated (it does not “restart”).
             )
 
     # =================================================
-    # TAB 4 — STRATEGY
+    # TAB 4 — STRATEGY DEVELOPMENT
     # =================================================
     with tabs[4]:
         st.header("Strategy Synthesis")
@@ -335,6 +376,129 @@ This is a **rules-based interpretation** of the research (not a full backtest):
 """
         )
 
-        st.success(
-            "If you want, the next step is a dedicated Backtest tab that tests entries/exits built on these filters."
+        st.divider()
+
+        st.subheader("Research Process Overview")
+
+
+        st.image(
+            "assets/strategy_development.png",
+            caption="Baseline Strategy → Failure Diagnosis → Strategy Refinement",
+            use_container_width=True,
         )
+
+        st.divider()
+
+
+        st.subheader("Baseline Strategy — Breakout Entry (Rejected)")
+
+        st.markdown(
+            """
+    This strategy uses the **10AM range breakout directly as entry**.
+    It represents the *first execution attempt* before any refinements.
+    """
+        )
+
+        st.markdown(
+            """
+    **Rules**
+    - Entry: Market entry on close-confirmed breakout
+    - Stop: Opposite extreme of breakout candle
+    - Targets: Fixed R multiples
+    """
+        )
+
+        baseline_df = pd.DataFrame(
+            [
+                {"Target": "1.0R", "Trades": 176, "Win Rate": "48.86%", "Profit Factor": "0.97", "Expectancy": "-0.016R"},
+                {"Target": "1.5R", "Trades": 176, "Win Rate": "39.77%", "Profit Factor": "0.94", "Expectancy": "-0.034R"},
+                {"Target": "2.0R", "Trades": 176, "Win Rate": "32.95%", "Profit Factor": "0.80", "Expectancy": "-0.123R"},
+            ]
+        )
+
+        st.dataframe(baseline_df, hide_index=True, use_container_width=True)
+
+        st.error(
+            """
+    **Conclusion (Rejected)**  
+    Despite directional continuation after breakouts, this strategy is **not viable**.
+    Expectancy is near or below zero across all R targets, indicating that
+    **entry timing is structurally inefficient**.
+    """
+        )
+
+    # =================================================
+    # TAB 5 — FINAL STRATEGY
+    # =================================================
+
+        with tabs[5]:
+            st.header("Final Strategy — 50% Retracement Entry")
+
+            st.markdown(
+                """
+        This strategy is the **final outcome** of the hypothesis-testing process.
+        It incorporates insights from rejected strategies and supporting statistical tests.
+        """
+            )
+
+            st.markdown(
+                """
+        **Final Rules**
+        - Context: 10AM range breakout (close-confirmed)
+        - Entry: 50% retracement of breakout candle
+        - Stop: Breakout candle extreme
+        - R defined as: *(entry → stop distance)*
+        - Targets: Fixed R multiples
+        """
+            )
+
+            st.image(
+                "assets/final_strategy_1.png",
+                caption="Final Strategy — 50% Retracement Entry Model",
+                use_container_width=True,
+            )
+
+            st.divider()
+
+            final_df = pd.DataFrame(
+                [
+                    {
+                        "Target": "1.0R",
+                        "Trades": 238,
+                        "Win Rate": "62.03%",
+                        "Profit Factor": "1.63",
+                        "Expectancy": "+0.239R",
+                    },
+                    {
+                        "Target": "1.5R",
+                        "Trades": 238,
+                        "Win Rate": "47.86%",
+                        "Profit Factor": "1.38",
+                        "Expectancy": "+0.193R",
+                    },
+                    {
+                        "Target": "2.0R",
+                        "Trades": 238,
+                        "Win Rate": "39.57%",
+                        "Profit Factor": "1.31",
+                        "Expectancy": "+0.181R",
+                    },
+                ]
+            )
+
+            st.dataframe(final_df, hide_index=True, use_container_width=True)
+
+            st.success(
+                """
+        **Final Conclusion**
+
+        Introducing a 50% retracement entry transforms the breakout model into a
+        **positive-expectancy strategy**. The improvement confirms that the edge
+        exists in **entry timing and structure**, not breakout direction alone.
+        """
+            )
+
+            st.caption(
+                "This strategy is presented as a statistical research outcome, not trading advice."
+            )
+
