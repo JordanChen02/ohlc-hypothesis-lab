@@ -147,17 +147,27 @@ All charts are generated directly from backtest output.
 
 ## 📁 Project Structure
 
-```text
-.
-├── app.py                     # Streamlit app
-├── hypotheses/
-│   └── strategy_backtest.py   # Core backtest logic
+<details>
+<summary>Click to expand</summary>
+
+<pre><code>.
+├── app.py                          # Streamlit research dashboard
+├── hypotheses/                     # Individual hypothesis tests
+│   ├── ten_am_reversal.py
+│   ├── close_vs_wick.py
+│   ├── stairstep_acceptance.py
+│   ├── retrace_before_1R.py
+│   └── strategy_backtest.py        # Final strategy backtest logic
 ├── data/
-│   └── processed/
-│       └── nq_5m_clean.csv
-├── assets/
-│   └── *.png                  # Charts & illustrations
+│   └── processed/                  # Cleaned OHLC datasets
+│       ├── nq_5m_clean.csv
+│       └── nq_1h_clean.csv
+├── assets/                         # Charts & visual examples
+│   └── *.png
 └── README.md
+</code></pre>
+
+</details>
 
 
 ---
