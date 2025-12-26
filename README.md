@@ -145,16 +145,18 @@ All charts are generated directly from backtest output.
 
 ---
 
-## 📂 Project Structure
+## 📁 Project Structure
 
-├── app.py # Streamlit app
+```text
+.
+├── app.py                     # Streamlit app
 ├── hypotheses/
-│ └── strategy_backtest.py # Core backtest logic
+│   └── strategy_backtest.py   # Core backtest logic
 ├── data/
-│ └── processed/
-│ └── nq_5m_clean.csv
+│   └── processed/
+│       └── nq_5m_clean.csv
 ├── assets/
-│ └── *.png # Charts & illustrations
+│   └── *.png                  # Charts & illustrations
 └── README.md
 
 
