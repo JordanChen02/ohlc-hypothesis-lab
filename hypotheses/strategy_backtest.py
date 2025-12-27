@@ -51,6 +51,9 @@ def load_5m() -> pd.DataFrame:
 # R is defined by entry->stop (i.e., half the breakout candle risk)
 # ============================================================
 def run_strategy(df: pd.DataFrame):
+    trade_log = []
+    trade_id = 0
+
     results = {rt: [] for rt in R_TARGETS}
 
     debug = {
@@ -177,9 +180,21 @@ def run_strategy(df: pd.DataFrame):
 
             results[rt].append(outcome)
 
-        debug["trades"] += 1
+        trade_log.append({
+            "trade_id": trade_id,
+            "date": day.index[0].date(),
+            "direction": direction,
+            "entry": entry,
+            "stop": stop,
+            "risk": risk,
+            "target_r": rt,
+            "result_r": outcome,
+        })
 
-    return results, debug
+        debug["trades"] += 1
+        trade_id += 1
+
+    return results, debug, pd.DataFrame(trade_log)
 
 
 # ============================================================
@@ -221,7 +236,11 @@ def summarize(results, debug):
 
 def main():
     df = load_5m()
-    results, debug = run_strategy(df)
+    results, debug, trades_df = run_strategy(df)
+    trades_df.to_csv(
+        "data/processed/final_strategy_trades.csv",
+        index=False
+    )
     summarize(results, debug)
 
 
