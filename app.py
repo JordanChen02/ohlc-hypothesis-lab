@@ -50,19 +50,10 @@ def held_pct(held_count: float, samples: float) -> float:
 
 @st.cache_data
 def load_final_trades():
-    path = "data/processed/final_strategy_trades.csv"
-    if not os.path.exists(path):
-        st.warning(
-            "Final strategy trade log not found. "
-            "Charts are unavailable in this environment."
-        )
-        return None
-    return pd.read_csv(path)
+    return pd.read_csv("assets/final_strategy_trades.csv")
 
 df_trades = load_final_trades()
-
-if df_trades is not None:
-    r = df_trades["result_r"].reset_index(drop=True)
+r = df_trades["result_r"].reset_index(drop=True)
 
 with center:
     st.title("Market Hypothesis Research")
