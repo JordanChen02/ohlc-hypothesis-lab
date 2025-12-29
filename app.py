@@ -510,70 +510,70 @@ This is a **rules-based interpretation** of the research (not a full backtest):
                 "This strategy is presented as a statistical research outcome, not trading advice."
             )
             
-    st.markdown("### Strategy Performance Overview")
+            st.markdown("### Strategy Performance Overview")
 
-    col1, col2, col3 = st.columns(3)
+            col1, col2, col3 = st.columns(3)
 
-    # =========================
-    # Column 1 — Cumulative R
-    # =========================
-    with col1:
-        st.markdown("**Cumulative R**")
-        st.caption(
-            "Cumulative performance assuming fixed 1R risk per trade. "
-            "Shows whether the edge survives trade sequencing."
-        )
+            # =========================
+            # Column 1 — Cumulative R
+            # =========================
+            with col1:
+                st.markdown("**Cumulative R**")
+                st.caption(
+                    "Cumulative performance assuming fixed 1R risk per trade. "
+                    "Shows whether the edge survives trade sequencing."
+                )
 
-        cum_r = r.cumsum()
+                cum_r = r.cumsum()
 
-        fig, ax = plt.subplots()
-        ax.plot(cum_r, linewidth=2)
-        ax.set_xlabel("Trade #")
-        ax.set_ylabel("Cumulative R")
-        ax.grid(alpha=0.3)
+                fig, ax = plt.subplots()
+                ax.plot(cum_r, linewidth=2)
+                ax.set_xlabel("Trade #")
+                ax.set_ylabel("Cumulative R")
+                ax.grid(alpha=0.3)
 
-        st.pyplot(fig, use_container_width=True)
-
-
-    # =========================
-    # Column 2 — Drawdown
-    # =========================
-    with col2:
-        st.markdown("**Drawdown Curve**")
-        st.caption(
-            "Peak-to-trough drawdowns in cumulative R. "
-            "Represents the worst pain experienced while trading the strategy."
-        )
-
-        running_max = cum_r.cummax()
-        drawdown = cum_r - running_max
-
-        fig, ax = plt.subplots()
-        ax.plot(drawdown, linewidth=2)
-        ax.set_xlabel("Trade #")
-        ax.set_ylabel("Drawdown (R)")
-        ax.grid(alpha=0.3)
-
-        st.pyplot(fig, use_container_width=True)
+                st.pyplot(fig, use_container_width=True)
 
 
-    # =========================
-    # Column 3 — Rolling Expectancy
-    # =========================
-    with col3:
-        st.markdown("**Rolling Expectancy (20 trades)**")
-        st.caption(
-            "Rolling average R per trade. "
-            "Helps identify whether the edge is stable or regime-dependent."
-        )
+            # =========================
+            # Column 2 — Drawdown
+            # =========================
+            with col2:
+                st.markdown("**Drawdown Curve**")
+                st.caption(
+                    "Peak-to-trough drawdowns in cumulative R. "
+                    "Represents the worst pain experienced while trading the strategy."
+                )
 
-        rolling_exp = r.rolling(20).mean()
+                running_max = cum_r.cummax()
+                drawdown = cum_r - running_max
 
-        fig, ax = plt.subplots()
-        ax.plot(rolling_exp, linewidth=2)
-        ax.axhline(0, linestyle="--", alpha=0.6)
-        ax.set_xlabel("Trade #")
-        ax.set_ylabel("Avg R")
-        ax.grid(alpha=0.3)
+                fig, ax = plt.subplots()
+                ax.plot(drawdown, linewidth=2)
+                ax.set_xlabel("Trade #")
+                ax.set_ylabel("Drawdown (R)")
+                ax.grid(alpha=0.3)
 
-        st.pyplot(fig, use_container_width=True)
+                st.pyplot(fig, use_container_width=True)
+
+
+            # =========================
+            # Column 3 — Rolling Expectancy
+            # =========================
+            with col3:
+                st.markdown("**Rolling Expectancy (20 trades)**")
+                st.caption(
+                    "Rolling average R per trade. "
+                    "Helps identify whether the edge is stable or regime-dependent."
+                )
+
+                rolling_exp = r.rolling(20).mean()
+
+                fig, ax = plt.subplots()
+                ax.plot(rolling_exp, linewidth=2)
+                ax.axhline(0, linestyle="--", alpha=0.6)
+                ax.set_xlabel("Trade #")
+                ax.set_ylabel("Avg R")
+                ax.grid(alpha=0.3)
+
+                st.pyplot(fig, use_container_width=True)
