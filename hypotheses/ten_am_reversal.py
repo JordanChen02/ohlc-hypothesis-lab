@@ -1,5 +1,9 @@
+
 from pathlib import Path
 import pandas as pd
+
+
+THIS_SHOULD_CRASH = (
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "processed" / "nq_5m_clean.csv"
