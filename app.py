@@ -48,9 +48,17 @@ def held_pct(held_count: float, samples: float) -> float:
         return 0.0
     return (float(held_count) / float(samples)) * 100.0
 
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+
 @st.cache_data
 def load_final_trades():
-    return pd.read_csv("assets/final_strategy_trades.csv")
+    path = ROOT / "data" / "processed" / "final_strategy_trades.csv"
+    if not path.exists():
+        raise FileNotFoundError(f"Missing file: {path}")
+    return pd.read_csv(path)
+
 
 df_trades = load_final_trades()
 r = df_trades["result_r"].reset_index(drop=True)
@@ -64,9 +72,6 @@ with center:
     # Load data once
     # -------------------------------------------------
     df = load_5m()
-
-    st.write(df)
-    st.stop()
 
     # -------------------------------------------------
     # Tabs (INTRO first)
