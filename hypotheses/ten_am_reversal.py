@@ -1,7 +1,9 @@
 from pathlib import Path
 import pandas as pd
 
-DATA = Path("data/processed/nq_5m_clean.csv")
+ROOT = Path(__file__).resolve().parents[1]
+DATA = ROOT / "data" / "processed" / "nq_5m_clean.csv"
+
 NY_TZ = "America/New_York"
 
 # Prior range (what can be reversed)
@@ -19,10 +21,13 @@ DAY_END  = "16:00"
 
 
 def load_5m():
+    if not DATA.exists():
+        raise FileNotFoundError(f"Missing data file: {DATA}")
     df = pd.read_csv(DATA)
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(NY_TZ)
     df = df.set_index("timestamp").sort_index()
     return df[["open", "high", "low", "close"]].dropna()
+
 
 
 def win(df_day, start, end):
