@@ -21,13 +21,20 @@ DAY_END  = "16:00"
 
 
 def load_5m():
-    if not DATA.exists():
-        raise FileNotFoundError(f"Missing data file: {DATA}")
-    df = pd.read_csv(DATA)
-    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(NY_TZ)
-    df = df.set_index("timestamp").sort_index()
-    return df[["open", "high", "low", "close"]].dropna()
+    import os
 
+    return {
+        "cwd": os.getcwd(),
+        "file_location": str(Path(__file__).resolve()),
+        "root": str(ROOT),
+        "data_path": str(DATA),
+        "data_exists": DATA.exists(),
+        "root_contents": os.listdir(ROOT),
+        "data_contents": os.listdir(ROOT / "data") if (ROOT / "data").exists() else "NO DATA DIR",
+        "processed_contents": os.listdir(ROOT / "data" / "processed")
+            if (ROOT / "data" / "processed").exists()
+            else "NO PROCESSED DIR",
+    }
 
 
 def win(df_day, start, end):
