@@ -16,7 +16,6 @@ st.set_page_config(
     layout="wide",
 )
 
-st.success("APP.PY IS RUNNING — FULL UI MODE")
 
 # -------------------------------------------------
 # 15 / 70 / 15 layout wrapper
