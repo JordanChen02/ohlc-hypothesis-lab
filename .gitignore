@@ -7,8 +7,9 @@ __pycache__/
 
 # Data
 data/raw/
-data/processed/*
-!data/processed/final_strategy_trades.csv
+!data/processed/
+!data/processed/*.csv
+
 
 # OS
 .DS_Store
