@@ -16,6 +16,8 @@ st.set_page_config(
     layout="wide",
 )
 
+st.success("APP.PY IS RUNNING — FULL UI MODE")
+
 # -------------------------------------------------
 # 15 / 70 / 15 layout wrapper
 # -------------------------------------------------
@@ -52,7 +54,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 
-@st.cache_data
+# @st.cache_data
 def load_final_trades():
     path = ROOT / "data" / "processed" / "final_strategy_trades.csv"
     if not path.exists():
