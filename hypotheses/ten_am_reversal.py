@@ -1,14 +1,27 @@
-
 from pathlib import Path
 import pandas as pd
 
-
-THIS_SHOULD_CRASH = (
-
 ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data" / "processed" / "nq_5m_clean.csv"
+
+DATA_DIR = ROOT / "data" / "processed"
+
+DATA = DATA_DIR / "nq_5m_clean.csv"
+
+if not DATA.exists():
+    raise FileNotFoundError(
+        f"Expected nq_5m_clean.csv not found in {DATA_DIR}. "
+        f"Found: {[p.name for p in DATA_DIR.glob('*.csv')]}"
+    )
+
 
 NY_TZ = "America/New_York"
+
+def load_5m():
+    df = pd.read_csv(DATA)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.tz_convert(NY_TZ)
+    df = df.set_index("timestamp").sort_index()
+    return df[["open", "high", "low", "close"]].dropna()
+
 
 # Prior range (what can be reversed)
 PRIOR_START = "09:30"
@@ -24,21 +37,21 @@ CUTOFF_2 = "12:00"
 DAY_END  = "16:00"
 
 
-def load_5m():
-    import os
+# def load_5m():
+#     import os
 
-    return {
-        "cwd": os.getcwd(),
-        "file_location": str(Path(__file__).resolve()),
-        "root": str(ROOT),
-        "data_path": str(DATA),
-        "data_exists": DATA.exists(),
-        "root_contents": os.listdir(ROOT),
-        "data_contents": os.listdir(ROOT / "data") if (ROOT / "data").exists() else "NO DATA DIR",
-        "processed_contents": os.listdir(ROOT / "data" / "processed")
-            if (ROOT / "data" / "processed").exists()
-            else "NO PROCESSED DIR",
-    }
+#     return {
+#         "cwd": os.getcwd(),
+#         "file_location": str(Path(__file__).resolve()),
+#         "root": str(ROOT),
+#         "data_path": str(DATA),
+#         "data_exists": DATA.exists(),
+#         "root_contents": os.listdir(ROOT),
+#         "data_contents": os.listdir(ROOT / "data") if (ROOT / "data").exists() else "NO DATA DIR",
+#         "processed_contents": os.listdir(ROOT / "data" / "processed")
+#             if (ROOT / "data" / "processed").exists()
+#             else "NO PROCESSED DIR",
+#     }
 
 
 def win(df_day, start, end):
